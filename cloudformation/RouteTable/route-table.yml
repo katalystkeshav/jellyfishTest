@@ -1,0 +1,37 @@
+
+Parameters: 
+  TestVpc: 
+    Description: Vpc Id
+    Type: "AWS::EC2::VPC::Id"
+
+Resources:
+
+  TestPubRt:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: TestVpc
+      Tags:
+      - Key: Name
+        Value: TestPubRt
+        Key: Environment
+        Value: Test
+
+  TestPvtRt:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: TestVpc
+      Tags:
+      - Key: Name
+        Value: TestPvtRt
+        Key: Environment
+        Value: Test
+
+Outputs:
+  PubRtId:
+    Description: Id of public route table.
+    Value: !Ref TestPubRt
+  PvtRtId:
+    Description: Id of private route table.
+    Value: !Ref TestPvtRt

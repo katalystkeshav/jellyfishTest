@@ -1,0 +1,54 @@
+Parameters:
+  TestVpc: 
+    Description: Vpc Id
+    Type: "AWS::EC2::VPC::Id"
+
+Resources:
+  NodeSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupName: NodeSg
+        GroupDescription: Allow http to client host
+        VpcId:
+          Ref: TestVpc
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          CidrIp: 192.168.0.0/24
+        Tags:
+        - Key: Name
+          Value: NodeSg
+        - Key: Environment
+          Value: Test
+
+  ElasticSearchSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupName: ElasticSearchSg
+        GroupDescription: Allow http to client host
+        VpcId:
+          Ref: TestVpc
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          CidrIp: 192.168.0.0/24
+        Tags:
+        - Key: Name
+          Value: ElasticSearchSg
+        - Key: Environment
+          Value: Test
+
+Outputs:
+  NodeSgId:
+    Description: Id of jenkins security group.
+    Value: !Ref NodeSg
+
+  EsSgId:
+    Description: Id of elasticsearch security group.
+    Value: !Ref ElasticSearchSg

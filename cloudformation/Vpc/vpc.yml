@@ -1,0 +1,19 @@
+Resources:
+
+  TestVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 192.168.0.0/24
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      InstanceTenancy: default
+      Tags:
+      - Key: Name
+        Value: TestVpc
+      - Key: Environment
+        Value: Test
+
+Outputs:
+  VpcId:
+    Description: Id of the vpc.
+    Value: !Ref TestVpc

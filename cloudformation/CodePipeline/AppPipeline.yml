@@ -1,0 +1,154 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  CbName:
+    Description: Name of the CodeBuild application
+    Type: String
+    Default: test-codebuild
+  ArtifactBucketName:
+    Description: Name of artifact bucket
+    Type: String
+    Default: bs-test-s3
+  LogGroupName:
+    Description: Name of log group
+    Type: String
+    Default: test-group
+  LogStreamName:
+    Description: Name of log stream
+    Type: String
+    Default: test-stream
+  CdAppName:
+    Description: Name of CodeDeploy Application
+    Type: String
+    Default: test-app
+  CdGroupName:
+    Description: Name of CodeDeploy Application
+    Type: String
+    Default: test-app
+  PipelineName:
+    Description: Name of CodeDeploy Application
+    Type: String
+    Default: test-pipeline
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Location: !Ref ArtifactBucketName
+        NamespaceType: BUILD_ID
+        Name: test.zip
+        Packaging: ZIP
+        Path: Artifact
+        Type: S3
+      Description: Test CodeBuild project
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:3.0
+        PrivilegedMode: 'false'
+      LogsConfig:
+        CloudWatchLogs: 
+          GroupName: !Ref LogGroupName
+          Status: ENABLED
+          StreamName: !Ref LogStreamName
+      Name: !Ref CbName
+      QueuedTimeoutInMinutes: 30
+      ServiceRole: arn:aws:iam::317596419736:role/service-role/test-iam-CodeBuildRole-VG20VI2T9ZV8
+      Source:
+        BuildSpec: buildspec.yml
+        Location: bs-repo-s3/path/to/object-name.zip
+        Type: S3
+      TimeoutInMinutes: 10
+      Tags:
+      - Key: Name
+        Value: !Ref CdName
+      - Key: Environment
+        Value: Prod
+
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Ref CdAppName
+      ComputePlatform: Server
+
+  DeploymentGroup: 
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties: 
+      ApplicationName: !Ref CodeDeployApplication
+      AutoRollbackConfiguration: 
+        Enabled: 'True'
+        Events: 
+        - DEPLOYMENT_FAILURE
+        - DEPLOYMENT_STOP_ON_REQUEST
+      DeploymentConfigName: CodeDeployDefault.OneAtATime
+      DeploymentStyle: 
+        DeploymentOption: WITHOUT_TRAFFIC_CONTROL
+        DeploymentType: IN_PLACE
+      Ec2TagFilters: 
+      - Key: Name
+        Value: Test
+        Type: "KEY_AND_VALUE"
+      ServiceRoleArn: arn:aws:iam::317596419736:role/test-iam-CodeDeployRole-13QBW5UC5O3TS
+
+  AppPipeline: 
+    Type: AWS::CodePipeline::Pipeline 
+    Properties: 
+      ArtifactStore:
+        Location: !Ref ArtifactBucketName
+        Type: S3
+      Name: !Ref PipelineName
+      RestartExecutionOnUpdate: 'False'
+      RoleArn: arn:aws:iam::317596419736:role/service-role/test-iam-CodePipelineRole-S1X92VVXPDXX
+      Stages: 
+      - Name: Source 
+        Actions: 
+        - Name: SourceAction
+          ActionTypeId: 
+            Category: Source 
+            Owner: AWS 
+            Version: 1 
+            Provider: S3 
+          Configuration:
+            S3Bucket: !Ref SourceBucketName
+            S3ObjectKey: test
+          OutputArtifacts: 
+          - Name: SourceArtifact  
+          Region: ap-south-1
+          RunOrder: 1 
+      - Name: Build 
+        Actions: 
+        - Name: BuildAction 
+          InputArtifacts: 
+          - Name: SourceArtifact
+          ActionTypeId: 
+            Category: Build
+            Owner: AWS 
+            Version: 1 
+            Provider: CodeBuild
+          Configuration: 
+            ProjectName: !Ref CodeBuildProject 
+          OutputArtifacts: 
+          - Name: BuildArtifact
+          Region: ap-south-1
+          RunOrder: 1 
+      - Name: Deploy
+        Actions: 
+        - Name: DeployAction
+          InputArtifacts: 
+          - Name: BuildArtifact
+          ActionTypeId: 
+            Category: Deploy 
+            Owner: AWS 
+            Version: 1
+            Provider: CodeDeploy 
+          Configuration: 
+            ApplicationName: !Ref CodeDeployApplication
+            DeploymentGroupName: !Ref DeploymentGroup 
+          Region: ap-south-1
+          RunOrder: 1 
+      Tags:
+        - Key: Name
+          Value: test-pipeline
+        - Key: Environment
+          Value: Prod

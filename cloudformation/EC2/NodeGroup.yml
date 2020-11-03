@@ -1,0 +1,104 @@
+Parameters: 
+  LinuxAmi: 
+    Description: Ami id of linux instance
+    Default: ami-0cda377a1b884a1bc
+    Type: String
+  AZ: 
+    Description: Availability zone
+    Default: ap-south-1
+    Type: String
+  Type: 
+    Description: Instance type
+    Default: t3.micro
+    Type: String
+  KeyName: 
+    Description: Name of the key pair
+    Default: test-ap
+    Type: String
+  NodeSgId: 
+    Description: Security group id
+    Type: "AWS::EC2::SecurityGroup::Id"
+  PvtSubnets: 
+    Description: Private subnet id
+    Type: "List<AWS::EC2::Subnet::Id>"
+  IamProfile: 
+    Description: Iam profile for node group
+    Type: String
+  DesiredSize: 
+    Description: No of instances required
+    Type: String
+    Default: '1'
+  MaxSize: 
+    Description: Max no of instances
+    Type: String
+    Default: '2'
+  MinSize: 
+    Description: Min no of instances
+    Type: String
+    Default: '1'
+  CpuTargetValue: 
+    Description: Target value for cpu usage
+    Type: Number
+    Default: 70
+  UserData:
+    Type: String
+    Default: |
+      IyEvYmluL2Jhc2ggCgpzZXQgLXhlIAplY2hvICJIZWxsbyB3b3JsZCI=
+
+Resources:
+  NodeGroup:
+    DependsOn: [ "NodeGroupLaunchTemplate" ]
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      DesiredCapacity: !Ref DesiredSize
+      LaunchTemplate:
+        LaunchTemplateName: !Sub '${AWS::StackName}'
+        Version: !GetAtt NodeGroupLaunchTemplate.LatestVersionNumber
+      MaxSize: !Ref MaxSize
+      MinSize: !Ref MinSize
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: 'true'
+          Value: TestNode
+        - Key: Environment
+          PropagateAtLaunch: 'true'
+          Value: Test
+      VPCZoneIdentifier: !Ref PvtSubnets
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: '1'
+        MinInstancesInService: !Ref DesiredSize
+
+  NodeGroupLaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 10
+            VolumeType: gp2
+            DeleteOnTermination: "true"
+        IamInstanceProfile:
+          Name: !Ref IamProfile
+        ImageId: !Ref LinuxAmi
+        InstanceType: !Ref Type
+        KeyName: !Ref KeyName
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: false
+            DeviceIndex: 0
+            Groups:
+              - !Ref NodeSgId
+        UserData: !Ref UserData
+      LaunchTemplateName: !Sub '${AWS::StackName}'
+
+  CpuPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref NodeGroup
+      EstimatedInstanceWarmup: 60
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref CpuTargetValue

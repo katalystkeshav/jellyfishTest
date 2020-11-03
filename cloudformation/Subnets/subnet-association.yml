@@ -1,0 +1,54 @@
+
+Parameters: 
+  TestPubRt: 
+    Description: Public route table id.
+    Type: "String"
+  TestPvtRt: 
+    Description: Private route table id.
+    Type: "String"
+  TestPubSubA: 
+    Description: Public subnet id.
+    Type: "String"
+  TestPubSubB: 
+    Description: Public subnet id.
+    Type: "String"
+  TestPvtSubA: 
+    Description: Private subnet id.
+    Type: "String"
+  TestPvtSubB: 
+    Description: Private subnet id.
+    Type: "String"
+
+
+Resources:
+ PubASubnetAssociation:
+   Type: AWS::EC2::SubnetRouteTableAssociation
+   Properties:
+     SubnetId:
+       Ref: TestPubSubA
+     RouteTableId:
+       Ref: TestPubRt
+
+ PubBSubnetAssociation:
+   Type: AWS::EC2::SubnetRouteTableAssociation
+   Properties:
+     SubnetId:
+       Ref: TestPubSubB
+     RouteTableId:
+       Ref: TestPubRt
+       
+ PvtASubnetAssociation:
+   Type: AWS::EC2::SubnetRouteTableAssociation
+   Properties:
+     SubnetId:
+       Ref: TestPvtSubA
+     RouteTableId:
+       Ref: TestPvtRt
+
+ PvtBSubnetAssociation:
+   Type: AWS::EC2::SubnetRouteTableAssociation
+   Properties:
+     SubnetId:
+       Ref: TestPvtSubB
+     RouteTableId:
+       Ref: TestPvtRt

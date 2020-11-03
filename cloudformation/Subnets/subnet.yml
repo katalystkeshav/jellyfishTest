@@ -1,0 +1,74 @@
+Parameters: 
+  TestVpc: 
+    Description: Vpc Id
+    Type: "AWS::EC2::VPC::Id"
+
+Resources:
+  TestPubA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TestVpc
+      CidrBlock: 192.168.0.0/27
+      AvailabilityZone: "ap-south-1a"
+      Tags:
+      - Key: Name
+        Value: Pub-SubA
+      - Key: Environment
+        Value: Test
+
+  TestPubB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TestVpc
+      CidrBlock: 192.168.0.96/27
+      AvailabilityZone: "ap-south-1b"
+      Tags:
+      - Key: Name
+        Value: Pub-SubB
+      - Key: Environment
+        Value: Test
+
+  TestPvtB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TestVpc
+      CidrBlock: 192.168.0.32/27
+      AvailabilityZone: "ap-south-1b"
+      Tags:
+      - Key: Name
+        Value: Pvt-SubB
+      - Key: Environment
+        Value: Test
+
+  TestPvtA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TestVpc
+      CidrBlock: 192.168.0.64/27
+      AvailabilityZone: "ap-south-1a"
+      Tags:
+      - Key: Name
+        Value: Pvt-SubA
+      - Key: Environment
+        Value: Test
+
+Outputs:
+  PubIdA:
+    Description: Id of the public subnet.
+    Value: !Ref TestPubA
+  PubIdB:
+    Description: Id of the public subnet.
+    Value: !Ref TestPubB
+  PvtIdA:
+    Description: Id of the private subnet.
+    Value: !Ref TestPvtA
+  PvtIdB:
+    Description: Id of the private subnet.
+    Value: !Ref TestPvtB
+  PvtSubId:
+    Description: List of Id of the private subnets.
+    Value: !Join [ ", ", [ !Ref TestPvtA, !Ref TestPvtB ] ]

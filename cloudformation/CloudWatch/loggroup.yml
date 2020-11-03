@@ -1,0 +1,6 @@
+
+Resources:
+  LogGroup1: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 7

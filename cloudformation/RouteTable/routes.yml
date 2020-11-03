@@ -1,0 +1,32 @@
+Parameters: 
+  TestPubRt: 
+    Description: Public route table id.
+    Type: "String"
+  TestPvtRt: 
+    Description: Private route table id.
+    Type: "String"
+  TestIg: 
+    Description: Internat gateway id.
+    Type: "String"
+  TestNat: 
+    Description: Nat gateway id.
+    Type: "String"
+
+Resources:
+  PubRoute:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId:
+         Ref: TestPubRt
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId:
+         Ref: TestIg
+
+  PvtRoute:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId:
+         Ref: TestPvtRt
+       DestinationCidrBlock: 0.0.0.0/0
+       NatGatewayId:
+         Ref: TestNat

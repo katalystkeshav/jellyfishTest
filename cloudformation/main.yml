@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources: 
+
+  TestVpcStack: 
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/Vpc/vpc.yml"
+
+  TestSubnetStack: 
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/Subnets/subnet.yml"
+      Parameters: 
+        TestVpc:
+          Fn::GetAtt: [ TestVpcStack, Outputs.VpcId ]
+
+  TestRouteTableStack: 
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/RouteTable/route-table.yml"
+      Parameters: 
+        TestVpc:
+          Fn::GetAtt: [ TestVpcStack, Outputs.VpcId ]
+
+  TestIgStack: 
+    Type: AWS::CloudFormation::Stack
+    DependsOn: TestVpcStack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/InternetGateway/InterGate.yml"
+      Parameters: 
+        TestVpc:
+          Fn::GetAtt: [ TestVpcStack, Outputs.VpcId ]
+
+  TestNatStack: 
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [ "TestIgStack", "TestSubnetStack" ]
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/NatGateway/nat.yml"
+      Parameters: 
+        TestVpc:
+          Fn::GetAtt: [ TestVpcStack, Outputs.VpcId ]
+        TestPub:
+          Fn::GetAtt: [ TestSubnetStack, Outputs.PubIdA ]
+
+  TestRoutesStack: 
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [ "TestIgStack", "TestNatStack" ]
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/RouteTable/routes.yml"
+      Parameters: 
+        TestPubRt:
+          Fn::GetAtt: [ TestRouteTableStack, Outputs.PubRtId ]
+        TestPvtRt:
+          Fn::GetAtt: [ TestRouteTableStack, Outputs.PvtRtId ]
+        TestIg:
+          Fn::GetAtt: [ TestIgStack, Outputs.IgId ]
+        TestNat:
+          Fn::GetAtt: [ TestNatStack, Outputs.NatId ]
+
+  TestSubnetAssociationStack: 
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [ "TestSubnetStack", "TestRouteTableStack" ]
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/Subnets/subnet-association.yml"
+      Parameters: 
+        TestPubRt:
+          Fn::GetAtt: [ TestRouteTableStack, Outputs.PubRtId ]
+        TestPvtRt:
+          Fn::GetAtt: [ TestRouteTableStack, Outputs.PvtRtId ]
+        TestPubSubA:
+          Fn::GetAtt: [ TestSubnetStack, Outputs.PubIdA ]
+        TestPubSubB:
+          Fn::GetAtt: [ TestSubnetStack, Outputs.PubIdB ]
+        TestPvtSubA:
+          Fn::GetAtt: [ TestSubnetStack, Outputs.PvtIdA ]
+        TestPvtSubB:
+          Fn::GetAtt: [ TestSubnetStack, Outputs.PvtIdB ]
+
+  TestSgStack: 
+    Type: AWS::CloudFormation::Stack
+    DependsOn: TestVpcStack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/SecurityGroup/sg.yml"
+      Parameters: 
+        TestVpc:
+          Fn::GetAtt: [ TestVpcStack, Outputs.VpcId ]
+
+  TestIamStack: 
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/Iam/role.yml"
+
+  TestS3Stack: 
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/S3/buckets.yml"
+
+  TestRepoStack: 
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/CodeCommit/repository.yml"
+
+  TestNodeGroupStack: 
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [ "TestVpcStack", "TestSubnetStack", "TestSgStack" ]
+    Properties: 
+      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/EC2/NodeGroup.yml"
+      Parameters: 
+        NodeSgId:
+          Fn::GetAtt: [ TestSgStack, Outputs.NodeSgId ]
+        PvtSubnets:
+          Fn::GetAtt: [ TestSubnetStack, Outputs.PvtSubId ]
+        IamProfile:
+          Fn::GetAtt: [ TestIamStack, Outputs.NodeProfileName ]
+
+#  TestElasticSearchStack: 
+#    Type: AWS::CloudFormation::Stack
+#    DependsOn: [ "TestVpcStack", "TestSubnetStack", "TestSgStack" ]
+#    Properties: 
+#      TemplateURL: "https://jellyfishtest.s3.ap-south-1.amazonaws.com/EC2/NodeGroup.yml"
+#      Parameters: 
+#        EsSgId:
+#          Fn::GetAtt: [ TestSgStack, Outputs.EsSgId ]
+#        PvtSubnets:
+#          Fn::GetAtt: [ TestSubnetStack, Outputs.PvtSubId ]

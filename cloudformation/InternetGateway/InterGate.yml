@@ -1,0 +1,27 @@
+Parameters: 
+  TestVpc: 
+    Description: Vpc Id
+    Type: "AWS::EC2::VPC::Id"
+    
+Resources:
+
+  TestIg:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: TestIg
+      - Key: Environment
+        Value: Test
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+         Ref: TestIg
+      VpcId:
+         Ref: TestVpc
+
+Outputs:
+  IgId:
+    Description: Id of the internet gateway.
+    Value: !Ref TestIg

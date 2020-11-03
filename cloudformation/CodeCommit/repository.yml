@@ -1,0 +1,7 @@
+
+Resources:
+  TestRepo:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: TestRepo
+      RepositoryDescription: This is a repository for test project.

@@ -1,0 +1,34 @@
+Parameters: 
+  TestVpc: 
+    Description: Vpc Id
+    Type: "AWS::EC2::VPC::Id"
+  TestPub:
+    Description: Id of the public-a subnet.
+    Type: "AWS::EC2::Subnet::Id"
+
+Resources:
+
+  EIP:
+     Type: AWS::EC2::EIP
+     Properties:
+        Domain: vpc
+
+  TestNat:
+     Type: AWS::EC2::NatGateway
+     Properties:
+        AllocationId:
+           Fn::GetAtt:
+           - EIP
+           - AllocationId
+        SubnetId:
+           Ref: TestPub
+        Tags:
+        - Key: Name
+          Value: TestNat
+        - Key: Environment
+          Value: Test
+
+Outputs:
+  NatId:
+    Description: Id of nat gateway.
+    Value: !Ref TestNat
